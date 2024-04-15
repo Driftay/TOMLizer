@@ -1,7 +1,11 @@
 package org.saberdev.tomlizer;
 
-import java.io.*;
-import java.nio.file.*;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Objects;
 
 public class CustomTomlFileBuilder {
@@ -55,8 +59,7 @@ public class CustomTomlFileBuilder {
         Path filePath = dataFolder.resolve(fileName);
         if (!Files.exists(filePath)) {
             if (loadFromProject) {
-                String resourcePath = inFolder.isEmpty() ? fileName : inFolder + "/" + fileName;
-                extractResource(resourcePath, filePath);
+                extractResource(filePath);
             } else {
                 createNewFile(filePath);
             }
@@ -66,12 +69,11 @@ public class CustomTomlFileBuilder {
 
     private void createNewFile(Path filePath) throws IOException {
         Files.createDirectories(filePath.getParent());
-        if (!Files.exists(filePath)) {
-            Files.createFile(filePath);
-        }
+        Files.createFile(filePath);
     }
 
-    private void extractResource(String resourcePath, Path filePath) throws IOException {
+    private void extractResource(Path filePath) throws IOException {
+        String resourcePath = inFolder.isEmpty() ? fileName : inFolder + "/" + fileName;
         try (InputStream is = getClass().getClassLoader().getResourceAsStream(resourcePath)) {
             if (is == null) {
                 throw new FileNotFoundException("Resource '" + resourcePath + "' not found");

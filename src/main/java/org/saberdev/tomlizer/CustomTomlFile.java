@@ -8,13 +8,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class CustomTomlFile {
     private final File file;
     private final Toml toml;
-    private final Map<String, Object> cachedObjects = new HashMap<>();
+    private Map<String, Object> cachedObjects = new HashMap<>();
 
     public CustomTomlFile(File file) {
         this.file = file;
@@ -27,57 +26,34 @@ public class CustomTomlFile {
         }
     }
 
-    public Toml getToml() {
-        return toml;
+    public <T> T fetch(String key, Class<T> clazz) {
+        if (cachedObjects.containsKey(key) && cachedObjects.get(key).getClass().equals(clazz)) {
+            return clazz.cast(cachedObjects.get(key));
+        }
+
+        Object result = switch (clazz.getSimpleName()) {
+            case "String" -> toml.getString(key);
+            case "Long" -> toml.getLong(key);
+            case "Double" -> toml.getDouble(key);
+            case "Boolean" -> toml.getBoolean(key);
+            case "List" -> toml.getList(key);
+            case "Map" -> toml.getTable(key);
+            default -> null;
+        };
+
+        if (result == null) {
+            throw new IllegalArgumentException("Key not found: " + key);
+        }
+
+        if (!clazz.isInstance(result)) {
+            throw new IllegalArgumentException("Value for key " + key + " is not of type " + clazz.getSimpleName());
+        }
+
+        cachedObjects.put(key, result);
+        return clazz.cast(result);
     }
 
     public boolean containsKey(String key) {
         return cachedObjects.containsKey(key) || toml.contains(key);
-    }
-
-    public String fetchString(String key) {
-        return (String) getObj(key, DataTypes.STRING);
-    }
-
-    public long fetchLong(String key) {
-        return (long) getObj(key, DataTypes.LONG);
-    }
-
-    public double fetchDouble(String key) {
-        return (double) getObj(key, DataTypes.DOUBLE);
-    }
-
-    public List<String> fetchStringList(String key) {
-        return (List<String>) getObj(key, DataTypes.STRINGLIST);
-    }
-
-    public boolean fetchBoolean(String key) {
-        return (boolean) getObj(key, DataTypes.BOOLEAN);
-    }
-
-    public Map<String, Object> fetchMap(String key) {
-        return (Map<String, Object>) getObj(key, DataTypes.MAP);
-    }
-
-    private Object getObj(String key, DataTypes data) {
-        if (cachedObjects.containsKey(key)) {
-            return cachedObjects.get(key);
-        }
-
-        Object result = switch (data) {
-            case STRING -> toml.getString(key);
-            case LONG -> toml.getLong(key);
-            case DOUBLE -> toml.getDouble(key);
-            case BOOLEAN -> toml.getBoolean(key);
-            case STRINGLIST -> toml.getList(key);
-            default -> null;
-        };
-
-        cachedObjects.put(key, result);
-        return result;
-    }
-
-    public enum DataTypes {
-        STRING, LONG, DOUBLE, STRINGLIST, BOOLEAN, MAP
     }
 }
