@@ -36,23 +36,37 @@ public class Main {
 }
 ```
 
-### Parsing a TOML File
+### Parsing a TOML File and Fetching Values
 
 ```java
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
 
 public class Main {
     public static void main(String[] args) {
         // Specify the path to the TOML file
-        Path filePath = Paths.get("/path/to/toml/file");
+        File file = new File("/path/to/toml/file");
 
         // Create a CustomTomlFile instance
-        CustomTomlFile tomlFile = new CustomTomlFile(filePath.toFile());
+        CustomTomlFile tomlFile = new CustomTomlFile(file);
+
+        // Fetch values from the TOML file
+        String stringValue = tomlFile.fetch("stringKey", String.class);
+        long longValue = tomlFile.fetch("longKey", Long.class);
+        double doubleValue = tomlFile.fetch("doubleKey", Double.class);
+        boolean booleanValue = tomlFile.fetch("booleanKey", Boolean.class);
+        List<String> listValue = tomlFile.fetch("listKey", List.class);
+        Map<String, Object> mapValue = tomlFile.fetch("mapKey", Map.class);
 
         // Access values from the TOML file
-        String value = tomlFile.getToml().getString("key");
-        System.out.println("Value: " + value);
+        System.out.println("String Value: " + stringValue);
+        System.out.println("Long Value: " + longValue);
+        System.out.println("Double Value: " + doubleValue);
+        System.out.println("Boolean Value: " + booleanValue);
+        System.out.println("List Value: " + listValue);
+        System.out.println("Map Value: " + mapValue);
     }
 }
 ```
