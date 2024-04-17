@@ -37,12 +37,12 @@ public class CustomTomlFile {
     }
 
     /**
-     * Fetches the value of a specified key from the TOML data.
+     * Fetches a value from the TOML file.
      *
+     * @param <T>   The type of the value to fetch.
      * @param key   The key to fetch the value for.
-     * @param clazz The expected type of the value.
-     * @return The value of the specified key, cast to the specified type.
-     * @throws IllegalArgumentException If the key is not found or the value is not of the expected type.
+     * @param clazz The class of the value to fetch.
+     * @return The fetched value.
      */
     public <T> T fetch(String key, Class<T> clazz) {
         if (cachedObjects.containsKey(key) && cachedObjects.get(key).getClass().equals(clazz)) {
