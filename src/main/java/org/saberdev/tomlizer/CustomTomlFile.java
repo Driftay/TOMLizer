@@ -9,56 +9,36 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Function;
 
 public class CustomTomlFile {
     private final File file;
     private final Toml toml;
     private Map<String, Object> cachedObjects = new HashMap<>();
 
-    /**
-     * Constructor for creating a new instance of CustomTomlFile.
-     *
-     * @param file The file to be read and written.
-     */
     public CustomTomlFile(File file) {
         this.file = file;
         this.toml = new Toml().read(file);
     }
 
-    /**
-     * Saves the current TOML data to the specified file.
-     *
-     * @throws IOException If an error occurs while writing to the file.
-     */
     public void saveToFile() throws IOException {
         try (Writer writer = new FileWriter(file)) {
             new TomlWriter().write(toml, writer);
         }
     }
 
-    /**
-     * Fetches a value from the TOML file.
-     *
-     * @param <T>   The type of the value to fetch.
-     * @param key   The key to fetch the value for.
-     * @param clazz The class of the value to fetch.
-     * @return The fetched value.
-     */
     public <T> T fetch(String key, Class<T> clazz) {
-        if (cachedObjects.containsKey(key) && cachedObjects.get(key).getClass().equals(clazz)) {
-            return clazz.cast(cachedObjects.get(key));
+        Object cachedValue = cachedObjects.get(key);
+        if (cachedValue != null && clazz.isInstance(cachedValue)) {
+            return clazz.cast(cachedValue);
         }
 
-        Object result = switch (clazz.getSimpleName()) {
-            case "String" -> toml.getString(key);
-            case "Long" -> toml.getLong(key);
-            case "Double" -> toml.getDouble(key);
-            case "Boolean" -> toml.getBoolean(key);
-            case "List" -> toml.getList(key);
-            case "Map" -> toml.getTable(key);
-            default -> null;
-        };
+        Function<String, Object> retrievalFunction = getRetrievalFunction(clazz);
+        if (retrievalFunction == null) {
+            throw new IllegalArgumentException("Unsupported type: " + clazz.getSimpleName());
+        }
 
+        Object result = retrievalFunction.apply(key);
         if (result == null) {
             throw new IllegalArgumentException("Key not found: " + key);
         }
@@ -71,12 +51,25 @@ public class CustomTomlFile {
         return clazz.cast(result);
     }
 
-    /**
-     * Checks if the specified key exists in the TOML data.
-     *
-     * @param key The key to check for.
-     * @return True if the key exists, false otherwise.
-     */
+    private Function<String, Object> getRetrievalFunction(Class<?> clazz) {
+        switch (clazz.getSimpleName()) {
+            case "String":
+                return toml::getString;
+            case "Long":
+                return toml::getLong;
+            case "Double":
+                return toml::getDouble;
+            case "Boolean":
+                return toml::getBoolean;
+            case "List":
+                return toml::getList;
+            case "Map":
+                return toml::getTable;
+            default:
+                return null;
+        }
+    }
+
     public boolean containsKey(String key) {
         return cachedObjects.containsKey(key) || toml.contains(key);
     }
